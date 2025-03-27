@@ -189,7 +189,7 @@ def plot3Dcube(mat, Xvec, Yvec, Zvec, mask=None, cmap='viridis',
     if vmax is None:
         vmax = mat.max()
 
-    cmap = cm.get_cmap(cmap, 256)
+    cmap = plt.colormaps.get_cmap(cmap)
     cmap_array = cmap((mat-vmin)/(vmax-vmin)) # R G B alpha
     colors = np.zeros(mat.shape + (4,))
     colors[..., 0] = cmap_array[:,:,:,0]
@@ -225,7 +225,7 @@ def plot3Dcube(mat, Xvec, Yvec, Zvec, mask=None, cmap='viridis',
     m.set_array([])
     if title!='':
         ax.set_title(title)
-    plt.colorbar(m, shrink=0.7, pad=0.1, label=vlabel)
+    plt.colorbar(m, ax=ax, shrink=0.7, pad=0.1, label=vlabel)
     plt.tight_layout()
     
     plt.show()
