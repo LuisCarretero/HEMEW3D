@@ -63,6 +63,8 @@ def butter_lowpass_filter(data, cutoff, dt=0.01, order=4):
     nyq = 0.5*fs # Nyquist frequency
     normal_cutoff = cutoff/nyq
     # Get the filter coefficients
+    
+    print(f'{normal_cutoff=}')
     b, a = butter(order, normal_cutoff, btype='low', analog=False)
     y=filtfilt(b,a,data)
     
