@@ -174,3 +174,12 @@ def butter_lowpass_filter(
         return pd.Series(y, index=idx)
     
     return y
+
+def read_processed_data(
+    fpath: str,
+    comp: str = 'E',
+    sample: int = 0
+) -> np.ndarray:
+    with h5py.File(fpath, 'r') as f:
+        data = f[f'u{comp}'][f'sample{sample}'][:]
+    return data
