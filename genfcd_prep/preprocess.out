@@ -1,0 +1,5 @@
+:- Starting preprocessing job...
+:- Python environment: /cluster/home/lcarretero/python_envs/rds-misc
+:- Current directory: /cluster/home/lcarretero/workspace/rds/HEMEW3D/genfcd_prep
+:- Running script: preprocess.py
+Processing files:   0%|          | 0/40 [00:00<?, ?it/s]Processing files:   2%|▎         | 1/40 [00:07<05:10,  7.95s/it]Processing files:   5%|▌         | 2/40 [00:16<05:09,  8.14s/it]Processing files:   8%|▊         | 3/40 [00:24<05:06,  8.29s/it]Processing files:  10%|█         | 4/40 [00:33<05:01,  8.38s/it]Processing files:  12%|█▎        | 5/40 [00:41<04:56,  8.46s/it]Processing files:  15%|█▌        | 6/40 [00:50<04:45,  8.39s/it]Processing files:  18%|█▊        | 7/40 [00:59<04:49,  8.76s/it]Processing files:  20%|██        | 8/40 [01:08<04:36,  8.65s/it]Processing files:  22%|██▎       | 9/40 [01:16<04:24,  8.55s/it]Processing files:  25%|██▌       | 10/40 [01:24<04:14,  8.50s/it]Processing files:  28%|██▊       | 11/40 [01:32<04:03,  8.41s/it]Processing files:  30%|███       | 12/40 [01:41<03:55,  8.43s/it]
