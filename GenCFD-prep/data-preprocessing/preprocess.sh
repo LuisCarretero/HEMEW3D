@@ -1,6 +1,6 @@
 #!/bin/bash
 #SBATCH --job-name=preprocess_HEMEW3D
-#SBATCH --output=/cluster/home/lcarretero/workspace/rds/HEMEW3D/GenCFD-prep/preprocess.out
+#SBATCH --output=/cluster/home/lcarretero/workspace/rds/HEMEW3D/GenCFD-prep/data-preprocessing/preprocess.out
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=4
 #SBATCH --mem-per-cpu=4G
@@ -10,7 +10,7 @@
 
 source $HOME/python_envs/rds-misc/bin/activate
 
-cd $HOME/workspace/rds/HEMEW3D/GenCFD-prep
+cd $HOME/workspace/rds/HEMEW3D/GenCFD-prep/data-preprocessing
 
 echo ":- Starting preprocessing job..."
 echo ":- Python environment: $VIRTUAL_ENV"

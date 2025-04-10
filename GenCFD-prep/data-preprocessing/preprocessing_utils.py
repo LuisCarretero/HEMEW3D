@@ -8,6 +8,7 @@ from scipy.signal import butter, filtfilt
 from scipy.interpolate import RegularGridInterpolator
 import h5py
 from tqdm import tqdm
+from pathlib import Path
 
 
 def process_data(
@@ -19,29 +20,42 @@ def process_data(
     fmax: float = 5,
     max_files: int = None
 ):  
-    f_orig = 100
+    F_ORIG = 100  # Recording frequency of numerical simulation
 
-    assert f_orig % f == 0, f'Requested sampling frequency {f}Hz that is not a divider of the recording frequency of 100Hz.'
+    assert F_ORIG % f == 0, f'Requested sampling frequency {f}Hz that is not a divider of the recording frequency of 100Hz.'
     assert fmax <= 5, f'Requested maximum frequency {fmax}Hz that is greater than the maximum frequency of the mesh (5Hz).'
 
-    processed_subdir = f'inputs3D_S{S_out}_Z{S_out}_T{Nt}_fmax{fmax}' # folder containing ML inputs
-
+    # Create processed data dir
+    processed_subdir = f'inputs3D_S{S_out}_Z{S_out}_T{Nt}_fmax{fmax}'
     os.makedirs(os.path.join(processed_data_path, processed_subdir), exist_ok=True)
 
-    fnames = list(sorted(os.listdir(os.path.join(raw_data_path, 'velocity'))))[:max_files]
-    for fnum, fname in tqdm(enumerate(fnames), desc='Processing files', total=len(fnames)):
-        fpath_raw = os.path.join(raw_data_path, 'velocity', fname)
+    # Get file paths and check for files already processed
+    fpaths_raw = np.array(sorted(Path(raw_data_path).joinpath('velocity').iterdir()))[:max_files]
+    fpaths_processed = np.array([
+        os.path.join(processed_data_path, processed_subdir, f'shard{fnum}.h5') 
+        for fnum in range(len(fpaths_raw))
+    ])
+    file_exists = np.array([os.path.exists(fpath_processed) for fpath_processed in fpaths_processed])
+    print(f'There are {len(fpaths_raw)} files to process. {np.sum(file_exists)} files already processed. '
+        f'Processing the remaining {np.sum(~file_exists)} files.')
+    fpaths_raw, fpaths_processed = fpaths_raw[~file_exists], fpaths_processed[~file_exists]
 
-        process_file(
-            fpath_raw=fpath_raw,
-            fpath_processed=os.path.join(processed_data_path, processed_subdir, f'shard{fnum}.h5'),
-            interpolate=True,
-            f_orig=f_orig,
-            S_out=S_out,
+    # Process (remaining) files
+    for fpath_raw, fpath_processed in tqdm(zip(fpaths_raw, fpaths_processed), desc='Processing files', total=len(fpaths_raw)):
+        try:
+            process_file(
+                fpath_raw=fpath_raw,
+                fpath_processed=fpath_processed,
+                interpolate=True,
+                f_orig=F_ORIG,
+                S_out=S_out,
             Nt=Nt,
             f=f,
-            fmax=fmax
-        )
+                fmax=fmax
+            )
+        except Exception as e:
+            print(f'Error processing file {fpath_raw}: {e}')
+            continue
 
 def process_file(
     fpath_raw: str, 
