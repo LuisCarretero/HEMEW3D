@@ -1,7 +1,6 @@
-from typing import Union
+from typing import Union, Tuple, List
 
 import os
-
 import numpy as np
 import pandas as pd
 from scipy.signal import butter, filtfilt
@@ -9,9 +8,11 @@ from scipy.interpolate import RegularGridInterpolator
 import h5py
 from tqdm import tqdm
 from pathlib import Path
+import torch
+import torch.nn.functional as F
 
 
-def process_data(
+def process_trace_data(
     raw_data_path: str,
     processed_data_path: str,
     S_out: int = 32,
@@ -26,11 +27,14 @@ def process_data(
     assert fmax <= 5, f'Requested maximum frequency {fmax}Hz that is greater than the maximum frequency of the mesh (5Hz).'
 
     # Create processed data dir
-    processed_subdir = f'inputs3D_S{S_out}_Z{S_out}_T{Nt}_fmax{fmax}'
+    processed_subdir = f'inputs3D_S{S_out}_T{Nt}_fmax{fmax}'
     os.makedirs(os.path.join(processed_data_path, processed_subdir), exist_ok=True)
 
     # Get file paths and check for files already processed
-    fpaths_raw = np.array(sorted(Path(raw_data_path).joinpath('velocity').iterdir()))[:max_files]
+    fpaths_raw = np.array(sorted(
+        Path(raw_data_path).joinpath('velocity').iterdir(), 
+        key=lambda x: int(x.name.strip('velocity').strip('.feather').split('-')[0])
+    ))[:max_files]
     fpaths_processed = np.array([
         os.path.join(processed_data_path, processed_subdir, f'shard{fnum}.h5') 
         for fnum in range(len(fpaths_raw))
@@ -43,21 +47,21 @@ def process_data(
     # Process (remaining) files
     for fpath_raw, fpath_processed in tqdm(zip(fpaths_raw, fpaths_processed), desc='Processing files', total=len(fpaths_raw)):
         try:
-            process_file(
+            process_trace_file(
                 fpath_raw=fpath_raw,
                 fpath_processed=fpath_processed,
                 interpolate=True,
                 f_orig=F_ORIG,
                 S_out=S_out,
-            Nt=Nt,
-            f=f,
+                Nt=Nt,
+                f=f,
                 fmax=fmax
             )
         except Exception as e:
             print(f'Error processing file {fpath_raw}: {e}')
             continue
 
-def process_file(
+def process_trace_file(
     fpath_raw: str, 
     fpath_processed: str,
     interpolate: bool = True,
@@ -79,6 +83,7 @@ def process_file(
 
     # Interpolate and write to file
     with h5py.File(fpath_processed, 'w') as file:
+        file.attrs['sampleIDs'] = trace_df.run.unique().astype(int)
         for comp in ['E', 'N', 'Z']:
             comp_trace = trace_df.loc[(trace_df.field == f'Veloc {comp}')].iloc[:, 2:].values.reshape(-1, 16, 16, Nt)
             file.create_group(f'u{comp}')
@@ -96,7 +101,79 @@ def process_file(
                 # Write to file
                 file[f'u{comp}'].create_dataset(f'sample{i}', data=u.astype(np.float32))
 
-def calc_interpolation_points(S_out: int, Nt: int, f: int) -> np.ndarray:
+def process_material_data(
+    raw_data_path: str,
+    processed_data_path: str,
+    S_out: int = 32,
+    Z_out: int = 64,
+    Nt: int = 320,
+    fmax: float = 5
+) -> None:
+    """
+    Process material data from raw data directory to processed data directory.
+    """
+    processed_subdir = f'inputs3D_S{S_out}_T{Nt}_fmax{fmax}'
+
+    # Get materials data fpaths and sort by index
+    fpaths_raw = np.array(list(Path(raw_data_path).joinpath('materials').iterdir()))
+    indices = np.array(list(map(
+        lambda x: tuple(map(int, x.name.strip('materials').strip('.npy').split('-'))), 
+        fpaths_raw
+    )))
+    order = np.argsort(indices[:, 0])
+    fpaths_raw, indices = fpaths_raw[order], indices[order]
+
+    # Get processed trace data shard ranges
+    tmp = []
+    for fpath in Path(processed_data_path).joinpath(processed_subdir).glob('shard*.h5'):
+        with h5py.File(fpath, 'r') as f:
+            tmp.extend([(str(fpath), sample_idx) for sample_idx in f.attrs['sampleIDs']])
+    df = pd.DataFrame(tmp, columns=['fpath', 'sample_idx'])
+
+    # Process each material file
+    for (trace_idx_start, trace_idx_end), fpath in tqdm(zip(indices, fpaths_raw), desc='Processing material files', total=len(indices)):
+        contained_sample_ids = set(range(trace_idx_start, trace_idx_end+1))
+        id_intersection = set(df.sample_idx).intersection(contained_sample_ids)
+        assert len(id_intersection) > 0, \
+            f'No intersection between sample IDs in material file {fpath} and the ones from {processed_data_path}.'
+        
+        shard_ranges = []
+        unique_shards = df[df.sample_idx.isin(id_intersection)]['fpath'].unique()
+        
+        for shard_path in unique_shards:
+            # Get all sample IDs in this shard that are also in our material file
+            shard_samples = set(df[df.fpath == shard_path].sample_idx.values).intersection(id_intersection)
+            shard_ranges.append((shard_path, shard_samples))
+
+        process_material_file(
+            fpath_raw=fpath,
+            shard_ranges=shard_ranges,
+            S_out=S_out,
+            Z_out=Z_out
+        )
+
+def process_material_file(
+    fpath_raw: str,
+    shard_ranges: List[Tuple[str, List[int]]],
+    S_out: int = 32,
+    Z_out: int = 64
+) -> None:
+    # Load and reshape data
+    arr = np.load(fpath_raw)
+    arr = reshape_vel_batch(arr, (S_out, S_out, Z_out))
+
+    offset = int(fpath_raw.name.strip('materials').strip('.npy').split('-')[0])
+
+    # Write to shards
+    for shard_path, shard_samples in shard_ranges:
+        with h5py.File(shard_path, 'a') as f:
+            if f.get('material'):
+                del f['material']
+            f.create_group(f'material')
+            for i in shard_samples:
+                f['material'].create_dataset(f'sample{i}', data=arr[i-offset])
+
+def calc_interpolation_points(S_out: int, Nt: int, f: int) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
     x = np.linspace(150, 9450, 16)
     x2 = np.linspace(150, 9450, S_out)
     z = np.linspace(150, 9450, 16)
@@ -189,7 +266,7 @@ def butter_lowpass_filter(
     
     return y
 
-def read_processed_data(
+def read_processed_trace_data(
     fpath: str,
     comp: str = 'E',
     sample: int = 0
@@ -197,3 +274,34 @@ def read_processed_data(
     with h5py.File(fpath, 'r') as f:
         data = f[f'u{comp}'][f'sample{sample}'][:]
     return data
+
+def reshape_vel_batch(vel_batch: np.ndarray, target_shape: tuple) -> np.ndarray:
+    """
+    Vectorized trilinear interpolation of a batch of 3D velocity fields.
+    
+    Parameters
+    ----------
+    vel_batch : np.ndarray
+        Array of shape (N, X, Y, Z) containing N samples.
+    target_shape : tuple of int
+        Desired output shape (X', Y', Z').
+    
+    Returns
+    -------
+    np.ndarray
+        Array of shape (N, X', Y', Z') with interpolated fields.
+    """
+    # vel_batch -> torch tensor with shape (N, 1, X, Y, Z)
+    t = torch.from_numpy(vel_batch).unsqueeze(1).float()
+    
+    # interpolate to (N, 1, X', Y', Z')
+    t_up = F.interpolate(
+        t,
+        size=target_shape,
+        mode='trilinear',
+        align_corners=True,     # preserve endpoints like linspace(0,1)
+        recompute_scale_factor=False
+    )
+    
+    # back to numpy, squeeze out the channel dim
+    return t_up.squeeze(1).numpy()
