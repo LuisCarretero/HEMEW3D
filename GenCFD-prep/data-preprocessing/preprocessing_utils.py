@@ -160,9 +160,9 @@ def process_material_file(
 ) -> None:
     # Load and reshape data
     arr = np.load(fpath_raw)
-    arr = reshape_vel_batch(arr, (S_out, S_out, Z_out))
+    arr = reshape_vel_batch(arr[:, :32, :32, :32], (S_out, S_out, Z_out))
 
-    offset = int(fpath_raw.name.strip('materials').strip('.npy').split('-')[0])
+    idx_offset = int(fpath_raw.name.strip('materials').strip('.npy').split('-')[0])
 
     # Write to shards
     for shard_path, shard_samples in shard_ranges:
@@ -170,8 +170,8 @@ def process_material_file(
             if f.get('material'):
                 del f['material']
             f.create_group(f'material')
-            for i in shard_samples:
-                f['material'].create_dataset(f'sample{i}', data=arr[i-offset])
+            for sample_idx in shard_samples:
+                f['material'].create_dataset(f'sample{sample_idx}', data=arr[sample_idx-idx_offset])
 
 def calc_interpolation_points(S_out: int, Nt: int, f: int) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
     x = np.linspace(150, 9450, 16)
