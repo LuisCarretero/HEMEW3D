@@ -2,7 +2,7 @@ from preprocessing_utils import process_trace_data, process_material_data
 
 if __name__ == '__main__':
     raw_data_path = r'/cluster/work/math/camlab-data/Wave_HemewS-3D/version1'
-    processed_data_path = r'/cluster/work/math/camlab-data/Wave_HemewS-3D/processed/version1-2'
+    processed_data_path = r'/cluster/work/math/camlab-data/Wave_HemewS-3D/processed/version1'
     S_out = 32
     Nt = Z_out = 64
     f = 10

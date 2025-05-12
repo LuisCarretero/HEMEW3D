@@ -112,6 +112,8 @@ def process_material_data(
     """
     Process material data from raw data directory to processed data directory.
     """
+    SAMPLES_PER_SHARD = 100
+
     processed_subdir = f'inputs3D_S{S_out}_T{Nt}_fmax{fmax}'
 
     # Get materials data fpaths and sort by index
@@ -143,18 +145,21 @@ def process_material_data(
         for shard_path in unique_shards:
             # Get all sample IDs in this shard that are also in our material file
             shard_samples = set(df[df.fpath == shard_path].sample_idx.values).intersection(id_intersection)
-            shard_ranges.append((shard_path, shard_samples))
+            assert len(shard_samples) == SAMPLES_PER_SHARD, \
+                f'Shard {shard_path} contains {len(shard_samples)} samples instead of {SAMPLES_PER_SHARD}.'
+            
+            shard_ranges.append((shard_path, np.array(sorted(shard_samples))))
 
         process_material_file(
             fpath_raw=fpath,
-            shard_ranges=shard_ranges,
+            shard_idx_ranges=shard_ranges,
             S_out=S_out,
             Z_out=Z_out
         )
 
 def process_material_file(
     fpath_raw: str,
-    shard_ranges: List[Tuple[str, List[int]]],
+    shard_idx_ranges: List[Tuple[str, np.ndarray]],
     S_out: int = 32,
     Z_out: int = 64
 ) -> None:
@@ -162,16 +167,16 @@ def process_material_file(
     arr = np.load(fpath_raw)
     arr = reshape_vel_batch(arr[:, :32, :32, :32], (S_out, S_out, Z_out))
 
-    idx_offset = int(fpath_raw.name.strip('materials').strip('.npy').split('-')[0])
-
     # Write to shards
-    for shard_path, shard_samples in shard_ranges:
+    for shard_path, shard_indices in shard_idx_ranges:
         with h5py.File(shard_path, 'a') as f:
+            idx_offset = f.attrs['sampleIDs'][0]
             if f.get('material'):
                 del f['material']
             f.create_group(f'material')
-            for sample_idx in shard_samples:
-                f['material'].create_dataset(f'sample{sample_idx}', data=arr[sample_idx-idx_offset])
+            local_indices = shard_indices - idx_offset
+            for loc_idx in local_indices:
+                f['material'].create_dataset(f'sample{loc_idx}', data=arr[loc_idx])
 
 def calc_interpolation_points(S_out: int, Nt: int, f: int) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
     x = np.linspace(150, 9450, 16)
