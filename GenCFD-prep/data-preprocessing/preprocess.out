@@ -1,7 +1,0 @@
-:- Starting preprocessing job...
-:- Python environment: /cluster/home/lcarretero/python_envs/rds-misc
-:- Current directory: /cluster/home/lcarretero/workspace/rds/HEMEW3D/GenCFD-prep/data-preprocessing
-:- Running script: preprocess.py
-Processing material data...
-Processing material files:   0%|          | 0/15 [00:00<?, ?it/s]Processing material files:   7%|▋         | 1/15 [00:23<05:29, 23.52s/it]Processing material files:  13%|█▎        | 2/15 [00:50<05:31, 25.50s/it]Processing material files:  20%|██        | 3/15 [01:18<05:20, 26.71s/it]Processing material files:  27%|██▋       | 4/15 [01:44<04:50, 26.38s/it]Processing material files:  33%|███▎      | 5/15 [02:11<04:24, 26.47s/it]Processing material files:  40%|████      | 6/15 [02:39<04:03, 27.05s/it]Processing material files:  47%|████▋     | 7/15 [03:05<03:35, 26.95s/it]Processing material files:  53%|█████▎    | 8/15 [03:36<03:15, 28.00s/it]Processing material files:  60%|██████    | 9/15 [04:06<02:52, 28.78s/it]Processing material files:  67%|██████▋   | 10/15 [04:38<02:28, 29.73s/it]Processing material files:  73%|███████▎  | 11/15 [05:07<01:58, 29.61s/it]Processing material files:  80%|████████  | 12/15 [05:35<01:27, 29.01s/it]Processing material files:  87%|████████▋ | 13/15 [06:02<00:57, 28.53s/it]Processing material files:  93%|█████████▎| 14/15 [06:29<00:28, 28.01s/it]Processing material files: 100%|██████████| 15/15 [06:57<00:00, 27.98s/it]Processing material files: 100%|██████████| 15/15 [06:57<00:00, 27.85s/it]
-:- Preprocessing job completed.
