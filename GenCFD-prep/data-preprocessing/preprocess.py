@@ -1,7 +1,7 @@
 import argparse
 
 
-from preprocessing_utils import process_trace_data, process_material_data
+from preprocessing_utils import process_trace_data, process_material_data, write_metadata
 
 
 if __name__ == '__main__':
@@ -34,6 +34,15 @@ if __name__ == '__main__':
             raise ValueError('Z_out and Nt must be the same if allow_different_Z_T_size is False. Note that GenCFD requires Z_out = Nt.')
         else:
             print('Warning: Z_out and Nt are different. This is allowed if allow_different_Z_T_size is True.')
+
+    write_metadata(
+        processed_data_path=args.processed_data_path,
+        S_out=args.S_out,
+        Nt=args.Nt,
+        Z_out=args.Z_out,
+        f=args.f,
+        fmax=args.fmax
+    )
 
     print('Processing trace data...')
     process_trace_data(

@@ -10,6 +10,8 @@ from tqdm import tqdm
 from pathlib import Path
 import torch
 import torch.nn.functional as F
+import json
+from datetime import datetime
 
 
 def process_trace_data(
@@ -310,3 +312,62 @@ def reshape_vel_batch(vel_batch: np.ndarray, target_shape: tuple) -> np.ndarray:
     
     # back to numpy, squeeze out the channel dim
     return t_up.squeeze(1).numpy()
+
+def write_metadata(
+    processed_data_path: str,
+    S_out: int,
+    Nt: int,
+    Z_out: int,
+    f: int,
+    fmax: float,
+    additional_params: dict = None
+) -> None:
+    """
+    Write metadata about the preprocessing parameters to a JSON file in the processed data directory.
+    
+    Parameters
+    ----------
+    processed_data_path : str
+        Path to the directory where processed data is stored.
+    S_out : int
+        Spatial output dimension (X and Y).
+    Nt : int
+        Temporal output dimension.
+    Z_out : int, optional
+        Vertical spatial output dimension. If None, defaults to Nt.
+    f : int, optional
+        Sampling frequency used in preprocessing.
+    fmax : float, optional
+        Maximum frequency for filtering.
+    additional_params : dict, optional
+        Any additional parameters to include in the metadata.
+    """
+
+    
+    # Create metadata dictionary
+    metadata = {
+        "creation_date": datetime.now().isoformat(),
+        "preprocessing_parameters": {
+            "S_out": S_out,
+            "Nt": Nt,
+            "Z_out": Z_out if Z_out is not None else Nt,
+            "sampling_frequency": f,
+            "max_frequency": fmax
+        }
+    }
+    
+    # Add any additional parameters
+    if additional_params is not None:
+        metadata["preprocessing_parameters"].update(additional_params)
+    
+    # Determine the processed subdirectory based on parameters
+    processed_subdir = f'inputs3D_S{S_out}_T{Nt}_fmax{fmax}'
+    
+    # Create the full path
+    metadata_path = os.path.join(processed_data_path, processed_subdir, 'metadata.json')
+    
+    # Write metadata to file
+    with open(metadata_path, 'w') as f:
+        json.dump(metadata, f, indent=4)
+    
+    print(f"Metadata written to {metadata_path}")
