@@ -320,6 +320,7 @@ def write_metadata(
     Z_out: int,
     f: int,
     fmax: float,
+    samples_per_file: int,
     additional_params: dict = None
 ) -> None:
     """
@@ -352,7 +353,8 @@ def write_metadata(
             "Nt": Nt,
             "Z_out": Z_out if Z_out is not None else Nt,
             "sampling_frequency": f,
-            "max_frequency": fmax
+            "max_frequency": fmax,
+            "samples_per_file": samples_per_file
         }
     }
     

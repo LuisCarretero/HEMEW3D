@@ -17,6 +17,6 @@ echo ":- Python environment: $VIRTUAL_ENV"
 echo ":- Current directory: $(pwd)"
 echo ":- Running script: preprocess.py"
 
-python preprocess.py --S_out 32 --Nt 64 --Z_out 64 --f 10 --fmax 5 --max_files 99999
+python preprocess.py --S_out 32 --Nt 128 --Z_out 128 --f 20 --fmax 5 --max_files 99999
 
 echo ":- Preprocessing job completed."

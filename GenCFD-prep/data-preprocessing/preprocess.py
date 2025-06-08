@@ -41,7 +41,8 @@ if __name__ == '__main__':
         Nt=args.Nt,
         Z_out=args.Z_out,
         f=args.f,
-        fmax=args.fmax
+        fmax=args.fmax,
+        samples_per_file=100  # TODO: Adjust this dynamically.
     )
 
     print('Processing trace data...')
