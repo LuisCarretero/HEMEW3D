@@ -4,20 +4,36 @@ from matplotlib import cm
 from matplotlib.colors import Normalize
 
 
-def plot3Dcube_outer_layer(mat, Xvec, Yvec, Zvec, cmap='viridis',
-                          title='', figsize=(12, 6),
-                          vmin=None, vmax=None,
-                          xlabel='x', ylabel='y', zlabel='z', vlabel='v'):
-    ''' 
-    Plot only the outer layer of a 3D cube
+def plot3Dcube_outer_layer(
+    mat: np.ndarray, 
+    Xvec: np.ndarray, 
+    Yvec: np.ndarray, 
+    Zvec: np.ndarray, 
+    cmap: str = 'viridis',
+    title: str = '', 
+    figsize: tuple = (12, 6),
+    vmin: float = None, 
+    vmax: float = None,
+    xlabel: str = 'x', ylabel: str = 'y', zlabel: str = 'z', vlabel: str = 'v'
+) -> None:
+    """
+    Plot only the outer layer of a 3D cube.
     
-    Parameters:
-    -----------
-    mat : (Nx, Ny, Nz) 3D array of scalars indexed by x, y, z 
-    Xvec : (Nx,) coordinates of the x axis
-    Yvec : (Ny,) coordinates of the y axis
-    Zvec : (Nz,) coordinates of the z axis
-    '''
+    Args:
+        mat: (Nx, Ny, Nz) 3D array of scalars indexed by x, y, z 
+        Xvec: (Nx,) coordinates of the x axis
+        Yvec: (Ny,) coordinates of the y axis
+        Zvec: (Nz,) coordinates of the z axis
+        cmap: colormap name
+        title: plot title
+        figsize: figure size as (width, height)
+        vmin: minimum value for colormap
+        vmax: maximum value for colormap
+        xlabel: label for x-axis
+        ylabel: label for y-axis
+        zlabel: label for z-axis
+        vlabel: label for values (colorbar)
+    """
     # Input validation
     if Xvec[1]<=Xvec[0] or Yvec[1]<=Yvec[0] or Zvec[1]<=Zvec[0]:
         raise Exception('Coordinate vectors must be in ascending order')
